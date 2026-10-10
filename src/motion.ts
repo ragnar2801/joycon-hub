@@ -41,8 +41,10 @@ export class MotionController {
   private screenAngle() { return (screen.orientation?.angle ?? (window as unknown as { orientation?: number }).orientation ?? 0) * Math.PI / 180; }
   private orientation = (e: DeviceOrientationEvent) => {
     if (e.beta == null || e.gamma == null || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
-    this.current.setFromEuler(new Euler(MathUtils.degToRad(e.beta), MathUtils.degToRad(e.alpha || 0), MathUtils.degToRad(-e.gamma), 'YXZ'));
-    this.current.multiply(new Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2));
+    // DeviceOrientation uses intrinsic Z-X-Y rotations in the phone's natural
+    // orientation. Keep the screen's X (right), Y (top), Z (outward) axes;
+    // camera-axis conversion would swap lateral tilt with twisting the phone.
+    this.current.setFromEuler(new Euler(MathUtils.degToRad(e.beta), MathUtils.degToRad(e.gamma), MathUtils.degToRad(e.alpha || 0), 'ZXY'));
     this.current.multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -this.screenAngle()));
     this.orientationAt = performance.now(); this.mode = 'orientation'; this.sample();
   };
@@ -64,8 +66,12 @@ export class MotionController {
     if (!a || a.x == null || a.y == null || a.z == null || ![a.x, a.y, a.z].every(Number.isFinite)) return;
     const gravity = new Vector3(a.x, a.y, a.z);
     if (gravity.length() < 2) return;
-    gravity.normalize().applyAxisAngle(new Vector3(0, 0, 1), -this.screenAngle());
-    this.current.setFromUnitVectors(new Vector3(0, 0, 1), gravity); this.mode = 'accelerometer'; this.sample();
+    gravity.normalize();
+    // A resting accelerometer points toward world up in device coordinates.
+    // Reconstruct device-to-world tilt, then apply the same screen correction.
+    this.current.setFromUnitVectors(gravity, new Vector3(0, 0, 1));
+    this.current.multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -this.screenAngle()));
+    this.mode = 'accelerometer'; this.sample();
   };
   private sample() {
     this.last = performance.now(); this.samples++;
@@ -92,7 +98,9 @@ export class MotionController {
     const angles = new Euler().setFromQuaternion(relative, 'YXZ');
     const axis = (radians: number) => { const degrees = MathUtils.radToDeg(radians), dead = 2.5; return Math.abs(degrees) < dead ? 0 : MathUtils.clamp(Math.sign(degrees) * (Math.abs(degrees) - dead) / 25 * this.sensitivity, -1, 1); };
     const smoothing = this.mode === 'accelerometer' ? .13 : .24;
-    this.filtered.roll += (axis(-angles.z) - this.filtered.roll) * smoothing;
+    // Screen-local +Y tilt lowers the right edge: steer right. Screen-local
+    // +X tilt raises the far edge: climb; lowering that edge descends.
+    this.filtered.roll += (axis(angles.y) - this.filtered.roll) * smoothing;
     this.filtered.pitch += (axis(angles.x) * (this.invert ? -1 : 1) - this.filtered.pitch) * smoothing;
     return { ...this.filtered };
   }

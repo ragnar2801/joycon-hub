@@ -15,7 +15,7 @@
 5. Calibrate while holding still for one second.
 6. Open **Sky Pilot** on the computer and take off.
 
-Tilt left/right to bank and turn; tilt forward/back to climb or descend. Recenter, sensitivity, pitch inversion, pause, restart, and optional touch controls are available on the phone.
+Hold the phone in landscape: tilt forward (lower the edge away from you) to descend, tilt backward to climb, lower the left edge to steer left, and lower the right edge to steer right. Both landscape orientations are supported. Recenter, sensitivity, optional pitch inversion, pause, restart, and touch controls are available on the phone.
 
 Sky Pilot includes a 12-ring, 90-second course and untimed free flight. An optional computer practice pad works without a phone. No keyboard flight controls are needed. Scores are saved on the computer's browser, with no account or global leaderboard.
 

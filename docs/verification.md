@@ -6,7 +6,7 @@ No unit tests are included. Production build and TypeScript checking pass. Brows
 
 - [ ] Open the published HTTPS site, scan its QR, and grant motion permission.
 - [ ] Calibrate in landscape while holding still for one second.
-- [ ] Tilt left/right and forward/back; verify correct flight directions.
+- [ ] In landscape, lower the far edge to descend and raise it to climb; lower the left edge to steer left and the right edge to steer right.
 - [ ] Test both landscape orientations and different comfortable holding angles.
 - [ ] Change phone orientation and recenter.
 - [ ] Check dead zone, smoothness, sensitivity, and inverted pitch.
