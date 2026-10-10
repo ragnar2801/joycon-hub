@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, CircleHelp, Gamepad2, Move, Pause, Plane, Play, Radio, RotateCcw, Settings2, Smartphone, Target, Wifi, WifiOff } from 'lucide-react';
-import { newSocket, request, serverUrl } from './connection';
+import { newConnection, request } from './connection';
 import { MotionController } from './motion';
 import { TouchPad } from './TouchPad';
 import type { Command, Controls, GameFeedback, JoinResult, SessionState } from '../shared/protocol';
@@ -8,7 +8,7 @@ import type { Command, Controls, GameFeedback, JoinResult, SessionState } from '
 export function Controller() {
   const params = new URLSearchParams(location.hash.split('?')[1]);
   const credentials = useRef<{ id?: string; token?: string; key?: string; generation?: string }>({ id: params.get('session') || undefined, token: params.get('token') || undefined });
-  const socket = useRef<ReturnType<typeof newSocket> | null>(null), motion = useRef(new MotionController()), touch = useRef<Controls>({ roll: 0, pitch: 0 });
+  const socket = useRef<ReturnType<typeof newConnection> | null>(null), motion = useRef(new MotionController()), touch = useRef<Controls>({ roll: 0, pitch: 0 });
   const [connected, setConnected] = useState(false), [joined, setJoined] = useState(false), [hostOnline, setHostOnline] = useState(false);
   const [step, setStep] = useState<'join' | 'permission' | 'calibrate' | 'ready'>('join');
   const [controlMode, setControlMode] = useState<'motion' | 'touch'>('motion');
@@ -24,7 +24,7 @@ export function Controller() {
   };
   const join = async (manualCode?: string) => {
     const client = socket.current;
-    if (!client?.connected) { setError('The relay is offline. Check your internet connection and try again.'); return; }
+    if (!client?.connected) { setError('Signaling is reconnecting. Check your internet connection and try again.'); return; }
     setBusy(true); setError('');
     try {
       const c = credentials.current;
@@ -44,11 +44,10 @@ export function Controller() {
       const saved = JSON.parse(sessionStorage.getItem('joycon-controller') || 'null');
       if (saved?.id && saved?.key && (!credentials.current.id || (saved.id === credentials.current.id && !credentials.current.token))) credentials.current = { id: saved.id, key: saved.key };
     } catch { /* No saved controller. */ }
-    if (!serverUrl) { setError('Phone pairing has not been configured for this site yet. Ask the host to configure the realtime relay.'); return; }
-    const client = newSocket(); socket.current = client;
+    const client = newConnection('controller'); socket.current = client;
     client.on('connect', () => { setConnected(true); setError(''); if (credentials.current.token || credentials.current.key) void join(); });
     client.on('disconnect', () => { setConnected(false); readyRef.current = false; setStep('permission'); setHostOnline(false); touch.current = { roll: 0, pitch: 0 }; });
-    client.on('connect_error', () => { setConnected(false); setError('Could not reach the pairing relay. Check your internet connection, then try again.'); });
+    client.on('connect_error', () => { setConnected(false); setError('Could not reach the signaling service. Check your internet connection, then try again.'); });
     client.on('session:state', (state: SessionState) => { setHostOnline(state.hostOnline); if (!state.hostOnline && readyRef.current) unready('The game screen disconnected. Wait for it to reconnect, then calibrate again.'); });
     client.on('session:revoked', () => { readyRef.current = false; setJoined(false); setStep('join'); setError('The host ended or reset this connection. Scan the new QR code.'); credentials.current = {}; try { sessionStorage.removeItem('joycon-controller'); } catch { /* No storage access. */ } });
     client.on('game:feedback', setGame);
@@ -63,7 +62,7 @@ export function Controller() {
       if (!readyRef.current || !client.connected || document.hidden) return;
       const value = modeRef.current === 'touch' ? touch.current : motion.current.read();
       if (!value) { unready('Motion readings stopped. Recenter, or switch to touch controls.'); return; }
-      client.volatile.emit('controller:input', { ...value, seq: seq.current++, generation: credentials.current.generation });
+      client.send('controller:input', { ...value, seq: seq.current++, generation: credentials.current.generation });
       if (++visualTicks % 3 === 0) setVisual(value);
     }, 33);
     client.connect();
@@ -114,6 +113,7 @@ export function Controller() {
         <p className="controller-note">{game.status === 'idle' ? 'Open Sky Pilot on the game screen to start.' : game.mode === 'course' ? `${game.rings} rings · ${game.remaining}s remaining` : 'Free flight · Enjoy the view'}</p>
       </>}
       {error && <p className="controller-error" role="alert">{error}</p>}
+      {!connected && <button className="text-button" disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await socket.current?.retry(); } catch { setError('Signaling could not reconnect. Check your internet connection and try again.'); } finally { setBusy(false); } }}>Retry connection</button>}
       {joined && !hostOnline && <p className="controller-error">The game screen is offline. Keep this page open while it reconnects.</p>}
     </div><footer className="controller-footer"><CircleHelp size={14}/> Keep this page open while playing.</footer>
   </main>;

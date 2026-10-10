@@ -1,41 +1,27 @@
-# Manual release verification
+# Device verification checklist
 
-## Completed during implementation
+No unit tests are included. Production build and TypeScript checking pass. Browser checks established direct WebRTC pairing through PeerJS Cloud, QR rendering, manual-code pairing, controller readiness, and the 3D scene. Physical phone checks are handed over to the user.
 
-- TypeScript checking and production build.
-- Desktop browser: hub, QR rendering, manual-code pairing, controller readiness, rendered flight and HUD, phone-to-game pause, and live score feedback.
-- Relay integration smoke checks: strong invitations, host/controller authorization, single phone ownership, valid input delivery, rejected invalid/stale/cross-room input, game feedback, command acknowledgments and deduplication, host/phone reconnect, invitation renewal, invalidation of old credentials, session close, and origin restrictions.
+## Phone and desktop on the same Wi-Fi
 
-## Required physical device checks
+- [ ] Open the published HTTPS site, scan its QR, and grant motion permission.
+- [ ] Calibrate in landscape while holding still for one second.
+- [ ] Tilt left/right and forward/back; verify correct flight directions.
+- [ ] Test both landscape orientations and different comfortable holding angles.
+- [ ] Change phone orientation and recenter.
+- [ ] Check dead zone, smoothness, sensitivity, and inverted pitch.
+- [ ] Deny motion permission and try touch controls.
+- [ ] Test pause, resume, restart, score feedback, and return to hub.
+- [ ] Background or lock the phone, return, recenter, and resume.
+- [ ] Refresh the phone; confirm credential-based reconnect and recalibration.
+- [ ] Refresh the computer; confirm a fresh QR is required.
+- [ ] Reset pairing; confirm old invitations/credentials no longer work.
+- [ ] Attempt a second phone connection.
+- [ ] Let an invitation expire and generate a new one.
+- [ ] Complete the ring course, crash/recover, replay, and check best-score persistence.
+- [ ] Play free flight long enough to check ring/environment recycling.
+- [ ] Test the practice pad without a phone.
+- [ ] Verify GitHub Pages assets and direct controller hash-route refresh.
+- [ ] Try a guest/device-isolated network and confirm a useful connection error.
 
-Use iPhone Safari and Android Chrome with the deployed HTTPS frontend and relay:
-
-- [ ] Scan an invitation and complete permission/calibration onboarding.
-- [ ] Deny motion permission; confirm useful recovery instructions and touch fallback.
-- [ ] Tilt left/right and forward/back in landscape; verify expected flight axes.
-- [ ] Test both landscape orientations and several natural holding angles.
-- [ ] Rotate the phone; confirm motion readiness is cleared and recentering is required.
-- [ ] Check stable neutral input, dead zone, filtering, sensitivity, and inverted pitch.
-- [ ] Compare orientation/gyro controls with accelerometer-only fallback if available.
-- [ ] Lock/background the phone, then return and recenter/resume.
-- [ ] Check screen wake lock and a browser that does not support it.
-- [ ] Test same Wi-Fi, phone cellular data, latency, and a brief network loss.
-- [ ] Reconnect the computer and phone without stale inputs being replayed.
-- [ ] Check touch controls, pointer release, and settings in landscape/portrait.
-
-## Release and hosting checks
-
-- [ ] Finish the course, collect/miss rings, crash/recover, replay, and verify best-score persistence.
-- [ ] Play free flight long enough to verify environment and ring recycling.
-- [ ] Return to the hub and reopen the game without re-pairing.
-- [ ] Let an invitation expire; renew and verify that the old code cannot pair.
-- [ ] Attempt to pair a second phone; reset and reconnect intentionally.
-- [ ] Visit and refresh the GitHub Pages controller hash route directly.
-- [ ] Confirm asset paths under the repository's Pages base path.
-- [ ] Confirm the published QR link targets the deployed frontend.
-- [ ] Verify unavailable/starting relay behavior and no-backend practice mode.
-- [ ] Verify WebGL-disabled behavior and a slower desktop.
-- [ ] Measure relay RTT separately from physical motion-to-screen latency.
-- [ ] Verify HTTPS frontend/relay, production origin allowlist, and no credentials in static files.
-
-No unit tests are included. The relay smoke verification uses transient local tooling, not a committed test suite.
+Signaling and STUN need internet during setup. Gameplay uses direct encrypted data channels; no application relay or TURN is configured. Motion snapshots use an unordered, non-retransmitted channel, with a short bounded fallback while that channel opens. Critical commands use the reliable channel with acknowledgments and duplicate suppression.

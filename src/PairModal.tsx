@@ -23,7 +23,7 @@ export function PairModal({ host, close, play }: { host: Host; close: () => void
       {expired && <button className="button primary" onClick={() => host.pair(true)}><RefreshCw size={16}/> Get a fresh code</button>}
     </>}
     {host.error && <p className="notice" role="alert">{host.error}</p>}
-    {local && !host.state.controllerOnline && <p className="notice">Local preview: your phone needs a public HTTPS frontend link. See the README’s phone setup instructions.</p>}
+    {local && !host.state.controllerOnline && <p className="notice">For phone testing, use the published HTTPS site on both devices. Localhost QR links only work on this computer.</p>}
     <div className="pair-actions">{link && !expired && !host.state.controllerOnline && <button className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { host.setError('Clipboard access is unavailable. Enter the pairing code on the controller page.'); } }}><Copy size={14}/>{copied ? 'Copied!' : 'Copy controller link'}</button>}
     <button className="text-button" onClick={() => host.pair(!!session)}><RefreshCw size={14}/>{session ? 'Reset connection' : 'Try again'}</button></div>
   </dialog>;

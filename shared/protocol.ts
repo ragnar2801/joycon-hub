@@ -8,7 +8,6 @@ export type SessionInfo = {
   token: string;
   code: string;
   expiresAt: number;
-  hostKey: string;
 };
 export type SessionState = { hostOnline: boolean; controllerOnline: boolean; ready: boolean };
 export type JoinResult = { id: string; controllerKey: string; generation: string };

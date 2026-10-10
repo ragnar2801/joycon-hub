@@ -26,7 +26,9 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-          VITE_SERVER_URL: ${{ vars.VITE_SERVER_URL }}
+          VITE_SIGNAL_HOST: ${{ vars.VITE_SIGNAL_HOST }}
+          VITE_SIGNAL_PORT: ${{ vars.VITE_SIGNAL_PORT }}
+          VITE_SIGNAL_PATH: ${{ vars.VITE_SIGNAL_PATH }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
